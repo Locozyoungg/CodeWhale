@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `[subagents] heartbeat_timeout_secs` window (default 300s), releasing their
   concurrency slot and unblocking parent turns that would otherwise wait
   forever (#2603, #2614, #2620).
+- **Work panel state survives transient lock misses.** The sidebar caches the
+  last successful Work summary so checklist and strategy progress no longer
+  disappear into "Work state updating..." while the engine briefly owns the
+  shared todo/plan locks (#2606, #2616).
 - **SiliconFlow-CN no longer breaks main.** Filled the missing CLI provider
   exhaustiveness arms and removed the duplicate/unreachable TUI config arms
   left by the #2615 landing; direct auth now stores the China-region variant in
