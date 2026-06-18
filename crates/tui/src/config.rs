@@ -5025,7 +5025,7 @@ fn merge_config(base: Config, override_cfg: Config) -> Config {
         features: merge_features(base.features, override_cfg.features),
         notifications: override_cfg.notifications.or(base.notifications),
         network: override_cfg.network.or(base.network),
-        skills: override_cfg.skills.or(base.skills),
+        skills: merge_skills_config(base.skills, override_cfg.skills),
         snapshots: override_cfg.snapshots.or(base.snapshots),
         search: override_cfg.search.or(base.search),
         memory: override_cfg.memory.or(base.memory),
@@ -5063,6 +5063,26 @@ fn merge_config(base: Config, override_cfg: Config) -> Config {
         strict_tool_mode: override_cfg.strict_tool_mode.or(base.strict_tool_mode),
         runtime_api: override_cfg.runtime_api.or(base.runtime_api),
         workshop: override_cfg.workshop.or(base.workshop),
+    }
+}
+
+fn merge_skills_config(
+    base: Option<SkillsConfig>,
+    override_cfg: Option<SkillsConfig>,
+) -> Option<SkillsConfig> {
+    match (base, override_cfg) {
+        (None, None) => None,
+        (Some(base), None) => Some(base),
+        (None, Some(override_cfg)) => Some(override_cfg),
+        (Some(base), Some(override_cfg)) => Some(SkillsConfig {
+            registry_url: override_cfg.registry_url.or(base.registry_url),
+            max_install_size_bytes: override_cfg
+                .max_install_size_bytes
+                .or(base.max_install_size_bytes),
+            scan_codewhale_only: override_cfg
+                .scan_codewhale_only
+                .or(base.scan_codewhale_only),
+        }),
     }
 }
 
@@ -8936,6 +8956,41 @@ scan_codewhale_only = true
 
         let merged = apply_profile(config, Some("work")).expect("profile");
         assert_eq!(merged.context.enabled, Some(true));
+    }
+
+    #[test]
+    fn profile_skills_config_merges_individual_fields() {
+        let mut profiles = HashMap::new();
+        profiles.insert(
+            "strict".to_string(),
+            Config {
+                skills: Some(SkillsConfig {
+                    scan_codewhale_only: Some(true),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        );
+        let config = ConfigFile {
+            base: Config {
+                skills: Some(SkillsConfig {
+                    registry_url: Some("https://registry.example/skills.json".to_string()),
+                    max_install_size_bytes: Some(1234),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            profiles: Some(profiles),
+        };
+
+        let merged = apply_profile(config, Some("strict")).expect("profile");
+        let skills = merged.skills.expect("merged skills config");
+        assert_eq!(
+            skills.registry_url.as_deref(),
+            Some("https://registry.example/skills.json")
+        );
+        assert_eq!(skills.max_install_size_bytes, Some(1234));
+        assert_eq!(skills.scan_codewhale_only, Some(true));
     }
 
     #[test]

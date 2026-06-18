@@ -502,9 +502,9 @@ fn skills_directories_with_home_and_mode(
             workspace.join(".cursor").join("skills"),
             workspace.join(".codewhale").join("skills"),
         ],
-        SkillDiscoveryMode::CodeWhaleOnly => {
-            vec![workspace.join(".codewhale").join("skills")]
-        }
+        SkillDiscoveryMode::CodeWhaleOnly => codewhale_workspace_skills_dir(workspace)
+            .into_iter()
+            .collect(),
     };
     if let Some(home) = home_dir {
         match mode {
@@ -522,6 +522,14 @@ fn skills_directories_with_home_and_mode(
         candidates.push(PathBuf::from("/tmp/codewhale/skills"));
     }
     existing_skill_dirs(candidates)
+}
+
+fn codewhale_workspace_skills_dir(workspace: &Path) -> Option<PathBuf> {
+    let skills_dir = workspace.join(".codewhale").join("skills");
+    let canonical_workspace = fs::canonicalize(workspace).ok()?;
+    let canonical_skills = fs::canonicalize(&skills_dir).ok()?;
+    (canonical_skills.is_dir() && canonical_skills.starts_with(canonical_workspace))
+        .then_some(skills_dir)
 }
 
 fn existing_skill_dirs(candidates: impl IntoIterator<Item = PathBuf>) -> Vec<PathBuf> {
@@ -1317,6 +1325,34 @@ mod tests {
         let names: Vec<&str> = registry.list().iter().map(|s| s.name.as_str()).collect();
 
         assert_eq!(names, vec!["configured-skill"]);
+    }
+
+    #[test]
+    fn codewhale_only_mode_rejects_workspace_codewhale_symlink_escape() {
+        let tmpdir = TempDir::new().unwrap();
+        let workspace = tmpdir.path().join("workspace");
+        let home = tmpdir.path().join("home");
+        let escape_target = tmpdir.path().join("escape-target");
+        std::fs::create_dir_all(workspace.join(".codewhale")).unwrap();
+        write_skill(&escape_target, "escaped-skill", "escaped skill", "body");
+
+        let link_path = workspace.join(".codewhale").join("skills");
+        if let Err(err) = create_dir_symlink(&escape_target, &link_path) {
+            eprintln!("skipping symlink escape assertion: {err}");
+            return;
+        }
+
+        let registry = super::discover_for_workspace_and_dir_with_home_and_mode(
+            &workspace,
+            &tmpdir.path().join("missing-configured-skills"),
+            Some(&home),
+            super::SkillDiscoveryMode::CodeWhaleOnly,
+        );
+
+        assert!(
+            registry.get("escaped-skill").is_none(),
+            "CodeWhale-only mode must not follow workspace .codewhale/skills outside the workspace"
+        );
     }
 
     #[test]

@@ -70,6 +70,9 @@ pub(crate) fn resolve_skills_dir(
     config: &Config,
 ) -> PathBuf {
     if config.skills_config().scan_codewhale_only() {
+        if config.skills_dir.is_some() {
+            return global_skills_dir.to_path_buf();
+        }
         let codewhale_skills_dir = workspace.join(".codewhale").join("skills");
         if codewhale_skills_dir.is_dir() {
             return codewhale_skills_dir;
@@ -6624,6 +6627,61 @@ mod tests {
                 .any(|(name, description)| name == "configured-skill"
                     && description == "Configured skill"),
             "configured skill dir should be merged: {:?}",
+            app.cached_skills
+        );
+    }
+
+    #[test]
+    fn cached_skills_preserve_configured_directory_in_codewhale_only_scan() {
+        let tmp = tempfile::TempDir::new().expect("tempdir");
+        let workspace = tmp.path().join("workspace");
+
+        let codewhale_skill_dir = workspace
+            .join(".codewhale")
+            .join("skills")
+            .join("workspace-codewhale");
+        std::fs::create_dir_all(&codewhale_skill_dir).expect("workspace codewhale skill dir");
+        std::fs::write(
+            codewhale_skill_dir.join("SKILL.md"),
+            "---\nname: workspace-codewhale\ndescription: Workspace CodeWhale skill\n---\nbody\n",
+        )
+        .expect("write workspace codewhale skill");
+
+        let configured_dir = tmp.path().join("configured-skills");
+        let configured_skill_dir = configured_dir.join("configured-skill");
+        std::fs::create_dir_all(&configured_skill_dir).expect("configured skill dir");
+        std::fs::write(
+            configured_skill_dir.join("SKILL.md"),
+            "---\nname: configured-skill\ndescription: Configured skill\n---\nbody\n",
+        )
+        .expect("write configured skill");
+
+        let mut options = test_options(false);
+        options.workspace = workspace.clone();
+        options.skills_dir = configured_dir.clone();
+        let config = Config {
+            skills_dir: Some(configured_dir.to_string_lossy().into_owned()),
+            skills: Some(crate::config::SkillsConfig {
+                scan_codewhale_only: Some(true),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let app = App::new(options, &config);
+
+        assert_eq!(app.skills_dir, configured_dir);
+        assert!(
+            app.cached_skills
+                .iter()
+                .any(|(name, _)| name == "workspace-codewhale"),
+            "workspace CodeWhale skill should still be cached: {:?}",
+            app.cached_skills
+        );
+        assert!(
+            app.cached_skills
+                .iter()
+                .any(|(name, _)| name == "configured-skill"),
+            "explicit configured skills_dir should still be cached: {:?}",
             app.cached_skills
         );
     }
