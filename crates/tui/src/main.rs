@@ -8482,6 +8482,7 @@ mod setup_helper_tests {
             include_str!("config.rs"),
             include_str!("logging.rs"),
             include_str!("../../config/src/lib.rs"),
+            include_str!("../../config/src/provider.rs"),
             include_str!("../../cli/src/main.rs"),
         ]
         .join("\n");
