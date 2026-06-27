@@ -90,12 +90,13 @@ count, allowed tools, pause state, todos, and plan state.
 | `user_commands.rs` lower layer | The registry owns runtime behavior, while this module remains the shared filesystem and parser layer. |
 | `#[cfg(test)]` helpers in `user_commands.rs` | Deferred test migration compatibility while registry-specific tests are added. |
 
-## EPIC-002 Completion Status (Draft — Phase 6 In Progress)
+## EPIC-002 Completion Status (Draft — Phase 7 In Progress)
 
 EPIC-002 (Command Single Responsibility Extraction) extracted commands for
 all 9 command groups through Layer 4.x sublayers. Layer 4.4 (FEAT-008) is
-currently in Phase 6 validation and is awaiting code review approval for
-final closure evidence.
+currently in Phase 7 (Testing and Polish) after Phase 6 code review findings
+were resolved. Phase 7 is polishing tests, documentation, and closure evidence
+before the Phase 8 final verification gate.
 
 | Layer | FEAT | Title | Status |
 |---|---|---|---|
@@ -103,24 +104,9 @@ final closure evidence.
 | 4.1 | FEAT-005 | Core and Session Command Extraction | Complete |
 | 4.2 | FEAT-006 | Config and Debug Command Extraction | Complete |
 | 4.3 | FEAT-007 | Project, Memory, Skills, and Utility Extraction | Complete |
-| 4.4 | FEAT-008 | Registry Cleanup, Documentation, and Full Validation | In progress (Phase 6 validation) |
+| 4.4 | FEAT-008 | Registry Cleanup, Documentation, and Full Validation | In progress (Phase 7)
 
-### Current Phase 6 Evidence (Draft — subject to code review)
-
-Phase 6 focused-command-surface and acceptance-runner evidence, collected
-during current validation:
-
-- AT-001: `cargo test -p codewhale-tui --test epic_acceptance_harness` — draft
-- AT-002: `every_registered_command_dispatches_to_a_handler` — draft
-- AT-003: `every_command_alias_dispatches_to_a_handler` — draft
-- AT-004: Help (test), palette (21 tests), slash completion (18 tests) — draft
-- AT-005: `dispatch_prefers_user_command_over_builtin_with_same_name` — draft
-- AT-006: `hidden_user_commands_still_dispatch_directly` — draft
-- AT-007: `unknown_command_suggests_nearest_match` — draft
-- AT-008: `command_registry_has_unique_names_and_aliases` — draft
-- AT-009: `command_ownership_contract_is_enforced` — draft
-- AT-010: Cleanup inventory verified — no undocumented migration paths remain — draft
-- AT-011: Final evidence — draft collected, subject to Phase 8 final gate
+### Current Evidence (Draft — subject to final verification)
 
 ## Replay Status (EPIC-001)
 

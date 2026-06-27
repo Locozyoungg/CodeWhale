@@ -22,8 +22,7 @@ const FEATURE_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/tests/features/eval_smoke.feature"
 );
-const SMOKE_SCENARIO: &str =
-    "Binary loads and reports step-level success via eval";
+const SMOKE_SCENARIO: &str = "Binary loads and reports step-level success via eval";
 
 #[derive(Debug, Default, cucumber::World)]
 struct EvalSmokeWorld {
